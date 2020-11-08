@@ -1,0 +1,24 @@
+{
+  "gtsrb":
+  {
+    "data_path": "./db/"
+  },
+  "gtsrb2TT100K":
+  {
+    "data_path": "./db/"
+  },
+  "belga2flickr":
+  {
+    "data_path": "./db/"
+  },
+
+  "belga2toplogo":
+  {
+    "data_path": "./db/"
+  },
+  "ASL":
+  {
+    "data_path": "./db/"
+  }
+}
+
