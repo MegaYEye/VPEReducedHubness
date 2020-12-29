@@ -14,7 +14,8 @@ numpy==1.17.2
 torch==1.4.0
 Pillow==7.0.0
 ```
-You can do ``` pip install -r requirements.txt ``` for installing all the dependencies.
+
+``` pip install -r requirements.txt ``` for installing all the dependencies.
 
 Please switch to scipy 1.1.0 by
 ```
