@@ -26,7 +26,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "3" # export OPENBLAS_NUM_THREADS=1
 os.environ["MKL_NUM_THREADS"] = "3" # export MKL_NUM_THREADS=1
 os.environ["VECLIB_MAXIMUM_THREADS"] = "3" # export VECLIB_MAXIMUM_THREADS=1
 os.environ["NUMEXPR_NUM_THREADS"] = "3" # export NUMEXPR_NUM_THREADS=1
-torch.set_num_threads(2) # this is important for torch 1.2!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! otherwise it will go 100 degree..
+torch.set_num_threads(4) # this is important for torch 1.2!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! otherwise it will go 100 degree..
 
 
 # Setup
@@ -38,7 +38,7 @@ parser.add_argument('--exp',        type=str,   default='exp_list',     help='tr
 parser.add_argument('--resume',     type=str,   default=None,           help='Resume training from previously saved model')
 
 parser.add_argument('--epochs',     type=int,   default=200,           help='Training epochs')
-parser.add_argument('--lr',         type=float, default=1.5e-4,           help='Learning rate')
+parser.add_argument('--lr',         type=float, default=3e-4,           help='Learning rate')
 parser.add_argument('--batch_size', type=int,   default=128,            help='Batch size')
 
 parser.add_argument('--img_cols',   type=int,   default=64,             help='resized image width')
@@ -181,24 +181,25 @@ def train(e):
     #loss = loss_function(recon, template, mu, logvar) # reconstruction loss
     loss1 = loss_function(recon, template, mu, logvar) # reconstruction loss
     # loss2 = ((mu-mu_temp).pow(2) + 1e-8).sum().sqrt()* 1.0
-    loss2 = ((mu-mu_temp).norm(dim=-1)).mean()*0.1
+    loss2 = ((mu-mu_temp).norm(dim=-1)).mean()
     # loss2=0
     loss3 = F.nll_loss(pred, target_gpu)
 
-    #mu_expand = mu.view(1, mu.shape[0], mu.shape[1]).repeat([template.shape[0],1,1]) 
-    #template_expand = mu_temp.view(mu_temp.shape[0],1, mu_temp.shape[1]).repeat([1,mu.shape[0],1]) 
-    #dis = (mu_expand-template_expand).norm(p=2, dim=-1)
+    mu_expand = mu.view(1, mu.shape[0], mu.shape[1]).repeat([template.shape[0],1,1]) 
+    template_expand = mu_temp.view(mu_temp.shape[0],1, mu_temp.shape[1]).repeat([1,mu.shape[0],1]) 
+    dis = (mu_expand-template_expand).norm(p=2, dim=-1)/10.0
 
-    #contrastive_mask_same = target.view(1,target.shape[0]).repeat([target.shape[0],1])==target.view(target.shape[0],1).repeat([1,target.shape[0]])
-    #contrastive_mask_diff = ~contrastive_mask_same#torch.logical_not(contrastive_mask_same)
+    contrastive_mask_same = target.view(1,target.shape[0]).repeat([target.shape[0],1])==target.view(target.shape[0],1).repeat([1,target.shape[0]])
+    contrastive_mask_diff = ~contrastive_mask_same#torch.logical_not(contrastive_mask_same)
 
-    #same_similarity = (-dis[contrastive_mask_same]).exp().mean()
-    #diff_similarity = (-dis[contrastive_mask_diff]).exp().mean()
-    #loss4 = -((same_similarity/(same_similarity+diff_similarity)).log())
+    same_similarity = (-dis[contrastive_mask_same]).exp().mean()
+    diff_similarity = (-dis[contrastive_mask_diff]).exp().mean()
+    loss4 = -((same_similarity/(same_similarity+diff_similarity)).log())
+    # if loss4<1e-2:
+    #   loss4=0
 
-
-    loss = loss1 + loss2 + loss3# + loss4
-    print('Epoch:%d  Batch:%d/%d  loss1:%08f loss2:%08f loss3:%08f'%(e, i, batch_iter, loss1/input.numel(), loss2, loss3))
+    loss = loss1 + loss2 + loss3 + loss4*0.1
+    print('Epoch:%d  Batch:%d/%d  loss1:%08f loss2:%08f loss3:%08f loss4:%08f '%(e, i, batch_iter, loss1/input.numel(), loss2, loss3, loss4))
 
     f_loss = open(os.path.join(result_path, "log_loss.txt"),'a')
     f_loss.write('Epoch:%d  Batch:%d/%d  loss:%08f\n'%(e, i, batch_iter, loss/input.numel()))

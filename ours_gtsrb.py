@@ -186,7 +186,7 @@ def train(e):
     loss1 = loss_function(recon, template, mu, logvar) # reconstruction loss
     mu_expand = mu.view(1, mu.shape[0], mu.shape[1]).repeat([template.shape[0],1,1]) 
     template_expand = mu_temp.view(mu_temp.shape[0],1, mu_temp.shape[1]).repeat([1,mu.shape[0],1]) 
-    dis = (mu_expand-template_expand).norm(p=2, dim=-1)
+    dis = (mu_expand-template_expand).norm(p=2, dim=-1)/10.0
 
     contrastive_mask_same = target.view(1,target.shape[0]).repeat([target.shape[0],1])==target.view(target.shape[0],1).repeat([1,target.shape[0]])
     contrastive_mask_diff = ~contrastive_mask_same
